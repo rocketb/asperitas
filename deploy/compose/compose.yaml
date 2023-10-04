@@ -1,0 +1,178 @@
+version: '3.8'
+
+networks:
+  db-nw:
+  metrics-nw:
+  vault-nw:
+
+volumes:
+  vault-data:
+  vault-creds:
+
+services:
+  db:
+    image: postgres:15.3
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - db-nw
+  vault:
+    image: hashicorp/vault:1.14
+    environment:
+      - "VAULT_ADDR=http://0.0.0.0:8200"
+      - "VAULT_API_ADDR=http://0.0.0.0:8200"
+      - "HOME=/home/vault"
+    cap_add:
+      - IPC_LOCK
+    entrypoint: ["vault", "server", "-config=/vault/config/vault-config.hcl"]
+    ports:
+      - "8200:8200"
+    volumes:
+      - ./config/vault-config.hcl:/vault/config/vault-config.hcl
+      - vault-data:/vault/data
+    networks:
+      - vault-nw
+  tempo:
+    image: grafana/tempo:2.1.1
+    command: "-config.file=/etc/tempo.yaml"
+    ports:
+      - "14268" # jaeger ingest
+      - "3200"  # tempo
+      - "4317"
+      - "4318"
+      - "9411"  # zipkin
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml
+    networks:
+      - metrics-nw
+  grafana:
+    image: grafana/grafana:9.5.3
+    ports:
+      - "3100:3100"
+    environment:
+      - "GF_ANALYTICS_REPORTING_ENABLED=false"
+      - "GF_ANALYTICS_CHECK_FOR_UPDATES=false"
+      - "GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false"
+      - "GF_FEATURE_TOGGLES_ENABLE=false"
+      - "GF_SERVER_HTTP_PORT=3100"
+      - "GF_AUTH_DISABLE_LOGIN_FORM=true"
+      - "GF_AUTH_ANONYMOUS_ENABLED=true"
+      - "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin"
+      - "GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/dashboards/asperitas.json"
+    volumes:
+      - ./config/dashboard.json:/etc/dashboards/asperitas.json
+      - ./config/datasource.yaml:/etc/grafana/provisioning/datasources/tempo.yaml
+    networks:
+      - metrics-nw
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - "--storage.tsdb.retention.time=1m"
+      - "--log.level=debug"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yaml
+    networks:
+      - metrics-nw
+  metrics:
+    image: asperitas-metrics:latest
+    build:
+      context: ../../
+      dockerfile: ./cmd/asperitas/metrics/Dockerfile
+      cache_from:
+        - asperitas-metrics:latest
+    ports:
+      - "3001:3001" # Expvar
+      - "3002:3002" # Prometheus
+    environment:
+      - "METRICS_COLLECT_FROM=http://app:4000/debug/vars"
+    networks:
+      - metrics-nw
+    depends_on:
+      - app
+  app:
+    image: asperitas-api:latest
+    build:
+      context: ../../
+      dockerfile: ./cmd/asperitas/api/Dockerfile
+      cache_from:
+        - asperitas-api:latest
+    ports:
+      - "8080:8080"
+      - "4000:4000" # DEBUG
+    environment:
+      - "ASPERITAS_TEMPO_REPORTER_URI=tempo:4317"
+      - "ASPERITAS_DB_USER=postgres"
+      - "ASPERITAS_DB_PASSWORD=postgres"
+      - "ASPERITAS_DB_HOST=db"
+      - "ASPERITAS_DB_NAME=postgres"
+    volumes:
+        - vault-creds:/vault
+    networks:
+      - db-nw
+      - metrics-nw
+      - vault-nw
+    depends_on:
+      - db
+      - vault
+      - db-seed
+  vault-init:
+    image: asperitas-admin:latest
+    build:
+      context: ../../
+      dockerfile: ./cmd/tools/asperitas-admin/Dockerfile
+      cache_from:
+        - asperitas-admin:latest
+    networks:
+      - vault-nw
+    depends_on:
+      - vault
+    user: "${UID}:${GID}"
+    volumes:
+      - vault-creds:/vault
+    command: ["./asperitas-admin", "vault-init"]
+  vault-loadkeys:
+    image: asperitas-admin:latest
+    build:
+      context: ../../
+      dockerfile: ./cmd/tools/asperitas-admin/Dockerfile
+      cache_from:
+        - asperitas-admin:latest
+    networks:
+      - vault-nw
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+    volumes:
+      - ../keys/:/deploy/keys/
+    command: ["./asperitas-admin", "vault"]
+  db-migrate:
+    image: asperitas-admin:latest
+    build:
+      context: ../../
+      dockerfile: ./cmd/tools/asperitas-admin/Dockerfile
+      cache_from:
+        - asperitas-admin:latest
+    networks:
+      - db-nw
+    depends_on:
+      - db
+    command: ["./asperitas-admin", "migrate"]
+  db-seed:
+    image: asperitas-admin:latest
+    build:
+      context: ../../
+      dockerfile: ./cmd/tools/asperitas-admin/Dockerfile
+      cache_from:
+        - asperitas-admin:latest
+    networks:
+      - db-nw
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    command: ["./asperitas-admin", "seed"]

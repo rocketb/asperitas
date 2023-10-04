@@ -1,0 +1,47 @@
+apiVersion: 1
+
+deleteDatasources:
+  - name: Tempo
+    orgId: 1
+
+datasources:
+  - name: Tempo
+    type: tempo
+    url: http://tempo:3200
+    access: proxy
+    isDefault: true
+    jsonData:
+      tracesToMetrics:
+      datasourceUid: 'prometheus'
+      tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+      queries:
+        - name: 'Sample query'
+          query: 'sum(rate(traces_spanmetrics_latency_bucket{$__tags}[5m]))'
+      serviceMap:
+        datasourceUid: 'prometheus'
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      spanBar:
+        type: 'Tag'
+        tag: 'http.path'
+    version: 1
+    editable: true
+  - name: Prometheus
+    type: prometheus
+    url: http://prometheus:9090
+    access: proxy
+    jsonData:
+      httpMethod: POST
+      prometheusType: Prometheus
+      prometheusVersion: 2.44.0
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      spanBar:
+        type: 'Tag'
+        tag: 'http.path'
+    version: 1
+    editable: true

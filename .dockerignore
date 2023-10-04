@@ -1,0 +1,12 @@
+.circleci/
+.git/
+.reading/
+.dockerignore
+.gitignore
+deploy/docker/
+deploy/k8s/
+out/
+CONTRIBUTORS
+LICENSE
+Makefile
+README.md

@@ -1,0 +1,42 @@
+# Binaries
+cmd/asperitas/api/asperitas-api
+cmd/asperitas/metrics/metrics
+cmd/tools/asperitas-admin/asperitas-admin
+
+# Mac
+.DS_Store
+
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+# Folders
+_obj
+_test
+
+# Editor files
+.idea/
+*.iml
+*.swp
+.rgignore
+todo.md
+.rgignore
+
+# Architecture specific extensions/prefixes
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+_testmain.go
+
+# coverage
+cover.out
+
+# reports
+test_results.txt
+
+# other
+etc/
