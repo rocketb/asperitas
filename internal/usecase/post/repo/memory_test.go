@@ -2,10 +2,8 @@ package repo
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/rocketb/asperitas/internal/usecase/post"
 
@@ -13,93 +11,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var curDate = time.Now()
-
 func TestMemory_GetAll(t *testing.T) {
-	puuid := uuid.New()
-	uuuid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
 	tests := []struct {
-		name    string
-		want    []*post.Post
-		fields  fields
-		wantErr assert.ErrorAssertionFunc
+		name   string
+		posts  []*post.Post
+		err    error
+		fields fields
 	}{
 		{
-			name:    "get items from empty list should return []",
-			fields:  fields{posts: map[uuid.UUID]*PostDB{}},
-			want:    []*post.Post{},
-			wantErr: assert.NoError,
+			name:   "get items from empty list should return []",
+			fields: fields{posts: map[uuid.UUID]*PostDB{}},
+			posts:  []*post.Post{},
 		},
 		{
 			name: "get one item should return that item",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID:          puuid,
-							Type:        "text",
-							Title:       "title",
-							Category:    "category",
-							Body:        "body",
-							Score:       1,
-							Views:       1,
-							DateCreated: curDate,
-							UserID:      uuuid,
-						},
+					uuid.New(): {
+						data: &post.Post{},
 					},
 				},
 			},
-			wantErr: assert.NoError,
-			want: []*post.Post{
-				{
-					ID:          puuid,
-					Type:        "text",
-					Title:       "title",
-					Category:    "category",
-					Body:        "body",
-					Score:       1,
-					Views:       1,
-					DateCreated: curDate,
-					UserID:      uuuid,
-				},
-			},
-		},
-		{
-			name: "get post of not existing author should not produce error",
-			fields: fields{
-				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID:          puuid,
-							Type:        "text",
-							Title:       "title",
-							Category:    "category",
-							Body:        "body",
-							Score:       1,
-							Views:       1,
-							DateCreated: curDate,
-							UserID:      uuuid,
-						},
-					},
-				},
-			},
-			wantErr: assert.NoError,
-			want: []*post.Post{
-				{
-					ID:          puuid,
-					Type:        "text",
-					Title:       "title",
-					Category:    "category",
-					Body:        "body",
-					Score:       1,
-					Views:       1,
-					DateCreated: curDate,
-					UserID:      uuuid,
-				},
-			},
+			posts: []*post.Post{{}},
 		},
 	}
 	for _, tt := range tests {
@@ -108,44 +44,33 @@ func TestMemory_GetAll(t *testing.T) {
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			got, err := r.GetAll(context.Background())
-			if !tt.wantErr(t, err) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GetAll()")
+			assert.Equal(t, tt.err, err)
+			assert.Equalf(t, tt.posts, got, "GetAll()")
 		})
 	}
 }
 
 func TestMemory_GetByCatName(t *testing.T) {
-	puuid := uuid.New()
-	uuuid := uuid.New()
 	type fields struct{ posts map[uuid.UUID]*PostDB }
 	type args struct {
 		catName string
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []*post.Post
-		wantErr assert.ErrorAssertionFunc
+		name   string
+		fields fields
+		args   args
+		posts  []*post.Post
+		err    error
 	}{
 		{
-			name: "get one item should return that item",
+			name: "get item should return that item",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					uuid.New(): {
 						data: &post.Post{
-							ID:          puuid,
-							Type:        "type",
-							Title:       "title",
-							Category:    "category_0",
-							Body:        "body",
-							Score:       1,
-							Views:       1,
-							DateCreated: curDate,
-							UserID:      uuuid,
+							Category: "category_0",
 						},
 					},
 				},
@@ -153,20 +78,11 @@ func TestMemory_GetByCatName(t *testing.T) {
 			args: args{
 				catName: "category_0",
 			},
-			want: []*post.Post{
+			posts: []*post.Post{
 				{
-					ID:          puuid,
-					Type:        "type",
-					Title:       "title",
-					Body:        "body",
-					Category:    "category_0",
-					Score:       1,
-					Views:       1,
-					DateCreated: curDate,
-					UserID:      uuuid,
+					Category: "category_0",
 				},
 			},
-			wantErr: assert.NoError,
 		},
 		{
 			name: "get items from empty repo should not produce an error",
@@ -176,84 +92,71 @@ func TestMemory_GetByCatName(t *testing.T) {
 			args: args{
 				catName: "not_exist",
 			},
-			want:    []*post.Post{},
-			wantErr: assert.NoError,
+			posts: []*post.Post{},
 		},
 		{
-			name: "get post of not existing category should not produce error",
+			name: "get not existing category should not produce error",
 			args: args{catName: "not_exist"},
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					uuid.New(): {
 						data: &post.Post{
-							ID:          puuid,
-							Type:        "text",
-							Title:       "title",
-							Category:    "category_1",
-							Body:        "body",
-							Score:       1,
-							Views:       1,
-							DateCreated: curDate,
-							UserID:      uuuid,
+							Category: "category_1",
 						},
 					},
 				},
 			},
-			wantErr: assert.NoError,
-			want:    []*post.Post{},
+			posts: []*post.Post{},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			got, err := r.GetByCatName(context.Background(), tt.args.catName)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetByCatName(%v)", tt.args.catName)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GetByCatName(%v)", tt.args.catName)
+			assert.Equal(t, tt.err, err)
+			assert.Equalf(t, tt.posts, got, "GetByCatName(%v)", tt.args.catName)
 		})
 	}
 }
 
 func TestMemory_GetByUserID(t *testing.T) {
-	puuid := uuid.New()
-	uuuid := uuid.New()
+	uid := uuid.New()
 	type fields struct{ posts map[uuid.UUID]*PostDB }
 	type args struct {
 		userID uuid.UUID
 	}
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []*post.Post
-		wantErr assert.ErrorAssertionFunc
+		name   string
+		fields fields
+		args   args
+		want   []*post.Post
+		err    error
 	}{
 		{
 			name: "get item should return that item",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					uuid.New(): {
 						data: &post.Post{
-							ID:     puuid,
-							UserID: uuuid,
+							UserID: uid,
 						},
 					},
 				},
 			},
 			args: args{
-				userID: uuuid,
+				userID: uid,
 			},
 			want: []*post.Post{
 				{
-					ID:     puuid,
-					UserID: uuuid,
+					UserID: uid,
 				},
 			},
-			wantErr: assert.NoError,
 		},
 		{
 			name: "get items with empty repo should not produce an error",
@@ -261,206 +164,141 @@ func TestMemory_GetByUserID(t *testing.T) {
 				posts: make(map[uuid.UUID]*PostDB),
 			},
 			args: args{
-				userID: uuuid,
+				userID: uid,
 			},
-			want:    []*post.Post{},
-			wantErr: assert.NoError,
+			want: []*post.Post{},
 		},
 		{
 			name: "get post of not existing uid should not produce an error",
-			args: args{userID: uuuid},
+			args: args{userID: uid},
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					uuid.New(): {
 						data: &post.Post{
-							ID:     puuid,
 							UserID: uuid.New(),
 						},
 					},
 				},
 			},
-			wantErr: assert.NoError,
-			want:    []*post.Post{},
+			want: []*post.Post{},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			got, err := r.GetByUserID(context.Background(), tt.args.userID)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetByCatName(%v)", tt.args.userID)) {
-				return
-			}
+			assert.Equal(t, tt.err, err)
 			assert.Equalf(t, tt.want, got, "GetByCatName(%v)", tt.args.userID)
 		})
 	}
 }
 
 func TestMemory_GetByID(t *testing.T) {
-	puuid := uuid.New()
-	uuuid := uuid.New()
-	u2uuid := uuid.New()
-
+	pid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
 	type args struct {
 		postID uuid.UUID
 	}
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *post.Post
-		wantErr assert.ErrorAssertionFunc
+		name   string
+		fields fields
+		args   args
+		want   *post.Post
+		err    error
 	}{
 		{
-			name:    "get item from empty repo should return err",
-			fields:  fields{posts: map[uuid.UUID]*PostDB{}},
-			want:    nil,
-			wantErr: assert.Error,
+			name:   "get item from empty repo should return err",
+			fields: fields{posts: map[uuid.UUID]*PostDB{}},
+			want:   nil,
+			err:    post.ErrNotFound,
 		},
 		{
 			name: "get one item should return that item",
-			args: args{postID: puuid},
+			args: args{postID: pid},
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					pid: {
 						data: &post.Post{
-							ID:          puuid,
-							Type:        "text",
-							Title:       "title",
-							Category:    "category",
-							Body:        "body",
-							Score:       1,
-							Views:       1,
-							DateCreated: curDate,
-							UserID:      uuuid,
+							ID: pid,
 						},
 					},
 				},
 			},
-			wantErr: assert.NoError,
 			want: &post.Post{
-				ID:          puuid,
-				Type:        "text",
-				Title:       "title",
-				Category:    "category",
-				Body:        "body",
-				Score:       1,
-				Views:       1,
-				DateCreated: curDate,
-				UserID:      uuuid,
-			},
-		},
-		{
-			name: "get post of not existing author should not produce error",
-			args: args{postID: puuid},
-			fields: fields{
-				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID:          puuid,
-							Type:        "text",
-							Title:       "title",
-							Category:    "category",
-							Body:        "body",
-							Score:       1,
-							Views:       1,
-							DateCreated: curDate,
-							UserID:      u2uuid,
-						},
-					},
-				},
-			},
-			wantErr: assert.NoError,
-			want: &post.Post{
-				ID:          puuid,
-				Type:        "text",
-				Title:       "title",
-				Category:    "category",
-				Body:        "body",
-				Score:       1,
-				Views:       1,
-				DateCreated: curDate,
-				UserID:      u2uuid,
+				ID: pid,
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			got, err := r.GetByID(context.Background(), tt.args.postID)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetByID(ctx, %v)", tt.args.postID)) {
-				return
-			}
+			assert.Equal(t, tt.err, err)
 			assert.Equalf(t, tt.want, got, "GetByID(ctx, %v)", tt.args.postID)
 		})
 	}
 }
 
 func TestMemory_Add(t *testing.T) {
-	uuuid := uuid.New()
-
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
 	type args struct {
 		newPost *post.Post
 	}
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    uuid.UUID
-		wantErr assert.ErrorAssertionFunc
+		name   string
+		fields fields
+		args   args
+		err    error
 	}{
 		{
 			name:   "create post should not produce error",
 			fields: fields{posts: make(map[uuid.UUID]*PostDB)},
 			args: args{
 				newPost: &post.Post{
-					Type:        "text",
-					Title:       "title",
-					Category:    "category",
-					Body:        "body",
-					Score:       1,
-					Views:       0,
-					DateCreated: curDate,
-					UserID:      uuuid,
+					ID: uuid.New(),
 				},
 			},
-			wantErr: assert.NoError,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
-			got, err := r.Add(context.Background(), tt.args.newPost)
-			if !tt.wantErr(t, err, fmt.Sprintf("Add(ctx, %v)", tt.args.newPost)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "Add(ctx, %v)", tt.args.newPost)
+
+			_, err := r.Add(context.Background(), tt.args.newPost)
+			assert.Equal(t, tt.err, err)
 		})
 	}
 }
 
 func TestMemory_Delete(t *testing.T) {
-	puuid := uuid.New()
+	pid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
 	type args struct {
 		postID uuid.UUID
 	}
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -472,15 +310,15 @@ func TestMemory_Delete(t *testing.T) {
 			name: "delete should not produce an error",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					pid: {
 						data: &post.Post{
-							ID: puuid,
+							ID: pid,
 						},
 					},
 				},
 			},
 			args: args{
-				postID: puuid,
+				postID: pid,
 			},
 			wantErr: assert.NoError,
 			want:    map[uuid.UUID]*PostDB{},
@@ -489,70 +327,57 @@ func TestMemory_Delete(t *testing.T) {
 			name: "delete from from empty repo should not produce an error",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {},
+					pid: {},
 				},
 			},
 			wantErr: assert.NoError,
 			want: map[uuid.UUID]*PostDB{
-				puuid: {},
+				pid: {},
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
-			tt.wantErr(t, r.Delete(context.Background(), tt.args.postID), fmt.Sprintf("Delete(ctx, %v)", tt.args.postID))
+
+			tt.wantErr(t, r.Delete(context.Background(), tt.args.postID))
 			assert.Equal(t, tt.want, r.posts)
 		})
 	}
 }
 
 func TestMemory_GetVotes(t *testing.T) {
-	puuid := uuid.New()
-	uuuid := uuid.New()
+	pid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
 	type args struct {
 		postID uuid.UUID
 	}
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []*post.Vote
-		wantErr assert.ErrorAssertionFunc
+		name   string
+		fields fields
+		args   args
+		posts  []*post.Vote
+		err    error
 	}{
 		{
 			name: "get votes",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID: puuid,
-						},
-						votes: []*post.Vote{
-							{
-								Vote: 1,
-								User: uuuid,
-							},
-						},
+					pid: {
+						data:  &post.Post{ID: pid},
+						votes: []*post.Vote{{Vote: 1}},
 					},
 				},
 			},
-			args: args{
-				postID: puuid,
-			},
-			want: []*post.Vote{
-				{
-					Vote: 1,
-					User: uuuid,
-				},
-			},
-			wantErr: assert.NoError,
+			args:  args{postID: pid},
+			posts: []*post.Vote{{Vote: 1}},
 		},
 		{
 			name: "err if post not exist",
@@ -560,31 +385,29 @@ func TestMemory_GetVotes(t *testing.T) {
 				posts: make(map[uuid.UUID]*PostDB),
 			},
 			args: args{
-				postID: puuid,
+				postID: pid,
 			},
-			wantErr: assert.Error,
+			err: post.ErrNotFound,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			got, err := r.GetVotes(context.Background(), tt.args.postID)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetVotes(ctx, %v)", tt.args.postID)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GetVotes(ctx, %v)", tt.args.postID)
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.err, err)
+			assert.Equal(t, tt.posts, got)
 		})
 	}
 }
 
 func TestMemory_AddVote(t *testing.T) {
-	puuid := uuid.New()
-	uuuid := uuid.New()
-	u2uuid := uuid.New()
+	pid := uuid.New()
+	uid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
@@ -592,12 +415,13 @@ func TestMemory_AddVote(t *testing.T) {
 		postID uuid.UUID
 		Vote   *post.Vote
 	}
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    map[uuid.UUID]*PostDB
-		wantErr assert.ErrorAssertionFunc
+		name   string
+		fields fields
+		args   args
+		posts  map[uuid.UUID]*PostDB
+		err    error
 	}{
 		{
 			name: "vote with empty repo is empty should produce error",
@@ -605,50 +429,23 @@ func TestMemory_AddVote(t *testing.T) {
 				posts: make(map[uuid.UUID]*PostDB),
 			},
 			args: args{
-				postID: puuid,
+				postID: pid,
 				Vote: &post.Vote{
 					Vote: 1,
-					User: uuuid,
+					User: uid,
 				},
 			},
-			want:    make(map[uuid.UUID]*PostDB),
-			wantErr: assert.Error,
-		},
-		{
-			name: "vote should produce error if post not exist",
-			fields: fields{
-				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID: puuid,
-						},
-					},
-				},
-			},
-			args: args{
-				postID: uuid.New(),
-				Vote: &post.Vote{
-					Vote: 1,
-					User: puuid,
-				},
-			},
-			wantErr: assert.Error,
-			want: map[uuid.UUID]*PostDB{
-				puuid: {
-					data: &post.Post{
-						ID: puuid,
-					},
-				},
-			},
+			posts: make(map[uuid.UUID]*PostDB),
+			err:   post.ErrNotFound,
 		},
 		{
 			name: "upvote should be counted and not produce error",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					pid: {
 						data: &post.Post{
-							ID:     puuid,
-							UserID: uuuid,
+							ID:     pid,
+							UserID: uid,
 							Score:  0,
 						},
 						votes: []*post.Vote{},
@@ -656,198 +453,139 @@ func TestMemory_AddVote(t *testing.T) {
 				},
 			},
 			args: args{
-				postID: puuid,
+				postID: pid,
 				Vote: &post.Vote{
 					Vote: 1,
-					User: uuuid,
+					User: uid,
 				},
 			},
-			want: map[uuid.UUID]*PostDB{
-				puuid: {
+			posts: map[uuid.UUID]*PostDB{
+				pid: {
 					data: &post.Post{
-						ID:     puuid,
-						UserID: uuuid,
+						ID:     pid,
+						UserID: uid,
 						Score:  1,
 					},
 					votes: []*post.Vote{
 						{
 							Vote: 1,
-							User: uuuid,
+							User: uid,
 						},
 					},
 				},
 			},
-			wantErr: assert.NoError,
-		},
-		{
-			name: "downvote should be counted and not produce error",
-			fields: fields{
-				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID:     puuid,
-							UserID: uuuid,
-							Score:  0,
-						},
-						votes: []*post.Vote{},
-					},
-				},
-			},
-			args: args{
-				postID: puuid,
-				Vote: &post.Vote{
-					Vote: -1,
-					User: uuuid,
-				},
-			},
-			want: map[uuid.UUID]*PostDB{
-				puuid: {
-					data: &post.Post{
-						ID:     puuid,
-						UserID: uuuid,
-						Score:  -1,
-					},
-					votes: []*post.Vote{
-						{
-							Vote: -1,
-							User: uuuid,
-						},
-					},
-				},
-			},
-			wantErr: assert.NoError,
 		},
 		{
 			name: "previous vote should be updated if exists",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					pid: {
 						data: &post.Post{
-							ID:     puuid,
-							UserID: uuuid,
+							ID:     pid,
+							UserID: uid,
 							Score:  2,
 						},
 						votes: []*post.Vote{
-							{Vote: 1, User: uuuid},
-							{Vote: 1, User: u2uuid},
+							{Vote: 1, User: uid},
 						},
 					},
 				},
 			},
 			args: args{
-				postID: puuid,
+				postID: pid,
 				Vote: &post.Vote{
 					Vote: -1,
-					User: uuuid,
+					User: uid,
 				},
 			},
-			want: map[uuid.UUID]*PostDB{
-				puuid: {
+			posts: map[uuid.UUID]*PostDB{
+				pid: {
 					data: &post.Post{
-						ID:     puuid,
-						UserID: uuuid,
+						ID:     pid,
+						UserID: uid,
 						Score:  1,
 					},
 					votes: []*post.Vote{
-						{Vote: -1, User: uuuid},
-						{Vote: 1, User: u2uuid},
+						{Vote: -1, User: uid},
 					},
 				},
 			},
-			wantErr: assert.NoError,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			err := r.AddVote(context.Background(), tt.args.postID, tt.args.Vote)
-			if !tt.wantErr(t, err, fmt.Sprintf("AddVote(ctx, %v, %v)", tt.args.postID, tt.args.Vote)) {
-				return
-			}
-			assert.Equalf(t, tt.want, r.posts, "AddVote(%v, %v)", tt.args.postID, tt.args.Vote)
+			assert.Equal(t, tt.err, err)
+			assert.Equal(t, tt.posts, r.posts)
 		})
 	}
 }
 
 func TestMemory_GetComments(t *testing.T) {
-	puuid := uuid.New()
-	cuuid := uuid.New()
+	pid := uuid.New()
+	cid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
 	type args struct {
 		postID uuid.UUID
 	}
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []*post.Comment
-		wantErr assert.ErrorAssertionFunc
+		name   string
+		fields fields
+		args   args
+		posts  []*post.Comment
+		err    error
 	}{
 		{
 			name: "get comments",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID: puuid,
-						},
+					pid: {
+						data: &post.Post{ID: pid},
 						comments: map[uuid.UUID]*post.Comment{
-							cuuid: {
-								ID:          cuuid,
-								DateCreated: curDate,
-								Body:        "comment body",
-							},
+							cid: {ID: cid},
 						},
 					},
 				},
 			},
-			args: args{
-				postID: puuid,
-			},
-			want: []*post.Comment{
-				{
-					ID:          cuuid,
-					DateCreated: curDate,
-					Body:        "comment body",
-				},
-			},
-			wantErr: assert.NoError,
+			args:  args{postID: pid},
+			posts: []*post.Comment{{ID: cid}},
 		},
 		{
 			name: "err if post not exist",
 			fields: fields{
 				posts: make(map[uuid.UUID]*PostDB),
 			},
-			args: args{
-				postID: puuid,
-			},
-			wantErr: assert.Error,
+			args: args{postID: pid},
+			err:  post.ErrNotFound,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			got, err := r.GetComments(context.Background(), tt.args.postID)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetComments(ctx, %v)", tt.args.postID)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GetCommentByID(ctx, %v)", tt.args.postID)
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.err, err)
+			assert.Equal(t, tt.posts, got)
 		})
 	}
 }
 
 func TestMemory_GetCommentByID(t *testing.T) {
-	puuid := uuid.New()
-	cuuid := uuid.New()
+	pid := uuid.New()
+	cid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
@@ -855,95 +593,78 @@ func TestMemory_GetCommentByID(t *testing.T) {
 		postID    uuid.UUID
 		commentID uuid.UUID
 	}
+
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
 		want    *post.Comment
-		wantErr assert.ErrorAssertionFunc
+		err error
 	}{
 		{
 			name: "get comment",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID: puuid,
-						},
+					pid: {
+						data: &post.Post{ID: pid},
 						comments: map[uuid.UUID]*post.Comment{
-							cuuid: {
-								ID:          cuuid,
-								DateCreated: curDate,
-								Body:        "comment body",
-							},
+							cid: {ID: cid},
 						},
 					},
 				},
 			},
 			args: args{
-				postID:    puuid,
-				commentID: cuuid,
+				postID:    pid,
+				commentID: cid,
 			},
-			want: &post.Comment{
-				ID:          cuuid,
-				DateCreated: curDate,
-				Body:        "comment body",
-			},
-			wantErr: assert.NoError,
+			want: &post.Comment{ID: cid},
 		},
 		{
 			name: "err if post not exist",
 			fields: fields{
 				posts: make(map[uuid.UUID]*PostDB),
 			},
-			args: args{
-				postID: puuid,
-			},
-			wantErr: assert.Error,
+			args: args{postID: pid},
+			err: post.ErrCommentNotFound,
 		},
 		{
 			name: "err if comment not exist",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID: puuid,
-						},
+					pid: {
+						data: &post.Post{ID: pid},
 						comments: map[uuid.UUID]*post.Comment{
-							cuuid: {
-								ID: cuuid,
-							},
+							cid: {ID: cid},
 						},
 					},
 				},
 			},
 			args: args{
-				postID:    puuid,
+				postID:    pid,
 				commentID: uuid.New(),
 			},
-			wantErr: assert.Error,
+			err: post.ErrCommentNotFound,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			got, err := r.GetCommentByID(context.Background(), tt.args.commentID)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetCommentByID(ctx, %v, %v)", tt.args.postID, tt.args.commentID)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GetCommentByID(ctx, %v, %v)", tt.args.postID, tt.args.commentID)
+			assert.Equal(t, tt.err, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestMemory_AddComment(t *testing.T) {
-	puuid := uuid.New()
-	uuuid := uuid.New()
-	cuuid := uuid.New()
+	pid := uuid.New()
+	uid := uuid.New()
+	cid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
@@ -951,52 +672,48 @@ func TestMemory_AddComment(t *testing.T) {
 		newComment *post.Comment
 		postID     uuid.UUID
 	}
+
 	tests := []struct {
 		name      string
 		fields    fields
 		args      args
 		want      uuid.UUID
-		wantPosts map[uuid.UUID]*PostDB
-		wantErr   assert.ErrorAssertionFunc
+		posts map[uuid.UUID]*PostDB
+		err   error
 	}{
 		{
 			name: "add comment should not produce error",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					pid: {
 						data: &post.Post{
-							ID:     puuid,
-							UserID: uuuid,
+							ID:     pid,
+							UserID: uid,
 						},
 						comments: make(map[uuid.UUID]*post.Comment),
 					},
 				},
 			},
 			args: args{
-				postID: puuid,
+				postID: pid,
 				newComment: &post.Comment{
-					ID:          cuuid,
-					DateCreated: curDate,
-					Body:        "some comment text",
+					ID:          cid,
 				},
 			},
-			want: cuuid,
-			wantPosts: map[uuid.UUID]*PostDB{
-				puuid: {
+			want: cid,
+			posts: map[uuid.UUID]*PostDB{
+				pid: {
 					data: &post.Post{
-						ID:     puuid,
-						UserID: uuuid,
+						ID:     pid,
+						UserID: uid,
 					},
 					comments: map[uuid.UUID]*post.Comment{
-						cuuid: {
-							ID:          cuuid,
-							DateCreated: curDate,
-							Body:        "some comment text",
+						cid: {
+							ID:          cid,
 						},
 					},
 				},
 			},
-			wantErr: assert.NoError,
 		},
 		{
 			name: "comment should produce error if post is not exist",
@@ -1004,14 +721,11 @@ func TestMemory_AddComment(t *testing.T) {
 				posts: make(map[uuid.UUID]*PostDB),
 			},
 			args: args{
-				postID: puuid,
-				newComment: &post.Comment{
-					DateCreated: curDate,
-					Body:        "body",
-				},
+				postID: pid,
+				newComment: &post.Comment{},
 			},
-			wantPosts: make(map[uuid.UUID]*PostDB),
-			wantErr:   assert.Error,
+			posts: make(map[uuid.UUID]*PostDB),
+			err: post.ErrNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -1020,19 +734,18 @@ func TestMemory_AddComment(t *testing.T) {
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			got, err := r.AddComment(context.Background(), tt.args.postID, tt.args.newComment)
-			if !tt.wantErr(t, err, fmt.Sprintf("AddComment(ctx, %v, %v)", tt.args.postID, tt.args.newComment)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "AddComment(ctx, %v, %v)", tt.args.postID, tt.args.newComment)
-			assert.Equal(t, tt.wantPosts, r.posts)
+			assert.Equal(t, tt.err, err)
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.posts, r.posts)
 		})
 	}
 }
 
 func TestMemory_DeleteComment(t *testing.T) {
-	puuid := uuid.New()
-	cuuid := uuid.New()
+	pid := uuid.New()
+	cid := uuid.New()
 	type fields struct {
 		posts map[uuid.UUID]*PostDB
 	}
@@ -1040,12 +753,13 @@ func TestMemory_DeleteComment(t *testing.T) {
 		postID    uuid.UUID
 		commentID uuid.UUID
 	}
+
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
 		want    map[uuid.UUID]*PostDB
-		wantErr assert.ErrorAssertionFunc
+		err     error
 	}{
 		{
 			name: "delete comment of not existing post should produce an error",
@@ -1053,81 +767,69 @@ func TestMemory_DeleteComment(t *testing.T) {
 				posts: make(map[uuid.UUID]*PostDB),
 			},
 			args: args{
-				postID:    puuid,
-				commentID: cuuid,
+				postID:    pid,
+				commentID: cid,
 			},
 			want:    make(map[uuid.UUID]*PostDB),
-			wantErr: assert.Error,
+			err: post.ErrNotFound,
 		},
 		{
 			name: "delete not existing comment should not produce an error",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
+					pid: {
 						data: &post.Post{
-							ID: puuid,
+							ID: pid,
 						},
 						comments: make(map[uuid.UUID]*post.Comment),
 					},
 				},
 			},
 			args: args{
-				postID:    puuid,
-				commentID: cuuid,
+				postID:    pid,
+				commentID: cid,
 			},
 			want: map[uuid.UUID]*PostDB{
-				puuid: {
-					data: &post.Post{
-						ID: puuid,
-					},
+				pid: {
+					data: &post.Post{ID: pid},
 					comments: make(map[uuid.UUID]*post.Comment),
 				},
 			},
-			wantErr: assert.NoError,
 		},
 		{
 			name: "delete existing comment should remove it",
 			fields: fields{
 				posts: map[uuid.UUID]*PostDB{
-					puuid: {
-						data: &post.Post{
-							ID: puuid,
-						},
-						comments: map[uuid.UUID]*post.Comment{
-							cuuid: {
-								ID:          cuuid,
-								DateCreated: curDate,
-								Body:        "comment text",
-							},
-						},
+					pid: {
+						data: &post.Post{ID: pid},
+						comments: map[uuid.UUID]*post.Comment{cid: {ID: cid}},
 					},
 				},
 			},
 			args: args{
-				postID:    puuid,
-				commentID: cuuid,
+				postID:    pid,
+				commentID: cid,
 			},
 			want: map[uuid.UUID]*PostDB{
-				puuid: {
+				pid: {
 					data: &post.Post{
-						ID: puuid,
+						ID: pid,
 					},
 					comments: make(map[uuid.UUID]*post.Comment),
 				},
 			},
-			wantErr: assert.NoError,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Memory{
 				mu:    &sync.RWMutex{},
 				posts: tt.fields.posts,
 			}
+
 			err := r.DeleteComment(context.Background(), tt.args.postID, tt.args.commentID)
-			if !tt.wantErr(t, err, fmt.Sprintf("DeleteComment(ctx, %v, %v)", tt.args.postID, tt.args.commentID)) {
-				return
-			}
+			assert.Equal(t, tt.err, err)
 			assert.Equalf(t, tt.want, r.posts, "Posts in repo should be equal")
 		})
 	}

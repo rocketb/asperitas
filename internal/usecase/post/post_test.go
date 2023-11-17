@@ -41,41 +41,36 @@ var (
 		Body:     tPost.Body,
 		Category: tPost.Category,
 	}
-	errFoo = errors.New("some error")
+	errFoo  = errors.New("some error")
+	curTime = time.Now()
 )
 
 func TestGetAll(t *testing.T) {
 	tests := []struct {
-		name        string
-		posts       []Post
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
+		name  string
+		posts []Post
+		err   error
 	}{
 		{
-			name:    "list all",
-			posts:   []Post{tPost},
-			wantErr: assert.NoError,
+			name:  "list all",
+			posts: []Post{tPost},
 		},
 		{
-			name:        "error on getting posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
-			posts:       []Post{},
+			name:  "error on getting posts",
+			err:   errFoo,
+			posts: []Post{},
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetAll", context.Background(), 1, 1).Return(tt.posts, tt.postRepoErr)
+			repo.Mock.On("GetAll", context.Background(), 1, 1).Return(tt.posts, tt.err)
 
 			posts, err := uc.GetAll(context.Background(), 1, 1)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.postRepoErr)
-			}
-
+			assert.Equal(t, err, tt.err)
 			assert.Equal(t, tt.posts, posts)
 		})
 	}
@@ -83,35 +78,29 @@ func TestGetAll(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	tests := []struct {
-		name        string
-		total       int
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
+		name  string
+		total int
+		err   error
 	}{
 		{
-			name:    "count posts ok",
-			wantErr: assert.NoError,
-			total:   1,
+			name:  "count posts ok",
+			total: 1,
 		},
 		{
-			name:        "error on count posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
+			name: "error on count posts",
+			err:  errFoo,
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("Count", context.Background()).Return(tt.total, tt.postRepoErr)
+			repo.Mock.On("Count", context.Background()).Return(tt.total, tt.err)
 
 			total, err := uc.Count(context.Background())
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.postRepoErr)
-			}
-
+			assert.Equal(t, err, tt.err)
 			assert.Equal(t, tt.total, total)
 		})
 	}
@@ -119,35 +108,29 @@ func TestCount(t *testing.T) {
 
 func TestGetByCatname(t *testing.T) {
 	tests := []struct {
-		name        string
-		posts       []Post
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
+		name  string
+		posts []Post
+		err   error
 	}{
 		{
-			name:    "list all",
-			posts:   []Post{tPost},
-			wantErr: assert.NoError,
+			name:  "list all",
+			posts: []Post{tPost},
 		},
 		{
-			name:        "error on getting posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
+			name: "error on getting posts",
+			err:  errFoo,
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetByCatName", context.Background(), tPost.Category).Return(tt.posts, tt.postRepoErr)
+			repo.Mock.On("GetByCatName", context.Background(), tPost.Category).Return(tt.posts, tt.err)
 
 			posts, err := uc.GetByCatName(context.Background(), tPost.Category)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.postRepoErr)
-			}
-
+			assert.Equal(t, err, tt.err)
 			assert.Equal(t, tt.posts, posts)
 		})
 	}
@@ -155,37 +138,29 @@ func TestGetByCatname(t *testing.T) {
 
 func TestGetByUserID(t *testing.T) {
 	tests := []struct {
-		name        string
-		posts       []Post
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
-		userRepoErr error
-		caseErr     error
+		name  string
+		posts []Post
+		err   error
 	}{
 		{
-			name:    "list all",
-			posts:   []Post{tPost},
-			wantErr: assert.NoError,
+			name:  "list all ok",
+			posts: []Post{tPost},
 		},
 		{
-			name:        "error on getting posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
-			caseErr:     errFoo,
+			name: "error on getting posts",
+			err:  errFoo,
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetByUserID", context.Background(), tUser.ID).Return(tt.posts, tt.postRepoErr)
-			posts, err := uc.GetByUserID(context.Background(), tUser.ID)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.caseErr)
-			}
+			repo.Mock.On("GetByUserID", context.Background(), tUser.ID).Return(tt.posts, tt.err)
 
+			posts, err := uc.GetByUserID(context.Background(), tUser.ID)
+			assert.Equal(t, err, tt.err)
 			assert.Equal(t, tt.posts, posts)
 		})
 	}
@@ -193,59 +168,48 @@ func TestGetByUserID(t *testing.T) {
 
 func TestGetByID(t *testing.T) {
 	tests := []struct {
-		name        string
-		post        Post
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
+		name string
+		post Post
+		err  error
 	}{
 		{
-			name:    "get by id",
-			post:    tPost,
-			wantErr: assert.NoError,
+			name: "get by id ok",
+			post: tPost,
 		},
 		{
-			name:        "error on getting posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
+			name: "error on getting posts",
+			err:  errFoo,
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tt.post, tt.postRepoErr).Once()
+			repo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tt.post, tt.err)
 
 			post, err := uc.GetByID(context.Background(), tPost.ID)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.postRepoErr)
-			}
-
+			assert.Equal(t, err, tt.err)
 			assert.Equal(t, tt.post, post)
 		})
 	}
 }
 
 func TestAddPost(t *testing.T) {
-	idGen := func() uuid.UUID {
-		return tPost.ID
-	}
-
-	curTime := time.Now()
 	type args struct {
 		claims auth.Claims
 		np     NewPost
 		now    time.Time
 	}
+
 	tests := []struct {
-		name        string
-		args        args
-		wantPost    Post
-		wantErr     assert.ErrorAssertionFunc
-		caseErr     error
-		postRepoErr error
-		voteAddErr  error
+		name     string
+		args     args
+		wantPost Post
+		caseErr  error
+		repoErr  error
+		voteErr  error
 	}{
 		{
 			name: "url post",
@@ -262,14 +226,12 @@ func TestAddPost(t *testing.T) {
 				},
 			},
 			wantPost: Post{
-				ID:          tPost.ID,
 				Type:        "url",
 				Body:        "url",
 				DateCreated: curTime,
 				UserID:      tUser.ID,
 				Score:       1,
 			},
-			wantErr: assert.NoError,
 		},
 		{
 			name: "text post",
@@ -285,14 +247,12 @@ func TestAddPost(t *testing.T) {
 				},
 			},
 			wantPost: Post{
-				ID:          tPost.ID,
 				Type:        "text",
 				Body:        "text",
 				DateCreated: curTime,
 				UserID:      tUser.ID,
 				Score:       1,
 			},
-			wantErr: assert.NoError,
 		},
 		{
 			name: "error wrong post type",
@@ -301,7 +261,6 @@ func TestAddPost(t *testing.T) {
 					Type: "not_exist",
 				},
 			},
-			wantErr: assert.Error,
 			caseErr: ErrWrongPostType,
 		},
 		{
@@ -316,10 +275,9 @@ func TestAddPost(t *testing.T) {
 					},
 				},
 			},
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
-			caseErr:     errFoo,
-			wantPost:    Post{},
+			repoErr:  errFoo,
+			caseErr:  errFoo,
+			wantPost: Post{},
 		},
 		{
 			name: "add vote error",
@@ -333,29 +291,25 @@ func TestAddPost(t *testing.T) {
 					},
 				},
 			},
-			wantErr:    assert.Error,
-			voteAddErr: errFoo,
-			wantPost:   Post{},
+			voteErr:  errFoo,
+			caseErr:  errFoo,
+			wantPost: Post{},
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
+		repo := NewRepoMock()
 		uc := Core{
-			idGen:     idGen,
-			PostsRepo: postRepo,
+			idGen:     func() uuid.UUID { return tt.wantPost.ID },
+			PostsRepo: repo,
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("Add", context.Background(), mock.Anything).Return(tt.postRepoErr)
-			postRepo.Mock.On("AddVote", context.Background(), mock.Anything, mock.Anything).Return(tt.voteAddErr)
+			repo.Mock.On("Add", context.Background(), mock.Anything).Return(tt.repoErr)
+			repo.Mock.On("AddVote", context.Background(), mock.Anything, mock.Anything).Return(tt.voteErr)
 
 			post, err := uc.Add(context.Background(), tt.args.claims, tt.args.np, curTime)
-			if tt.wantErr(t, err) {
-				if tt.caseErr != nil {
-					assert.Equal(t, tt.caseErr, err)
-				}
-			}
+			assert.Equal(t, tt.caseErr, err)
 			assert.Equal(t, tt.wantPost, post)
 		})
 	}
@@ -363,54 +317,48 @@ func TestAddPost(t *testing.T) {
 
 func TestDeletePost(t *testing.T) {
 	tests := []struct {
-		name        string
-		post        Post
-		claims      auth.Claims
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
-		caseErr     error
+		name    string
+		post    Post
+		claims  auth.Claims
+		repoErr error
+		caseErr error
 	}{
 		{
-			name: "delete post",
+			name: "delete post ok",
 			post: tPost,
 			claims: auth.Claims{
 				User: auth.User{
 					ID: tPost.UserID,
 				},
 			},
-			wantErr: assert.NoError,
 		},
 		{
-			name: "try to delete post of some body else",
+			name: "try to delete post of other user",
 			post: tPost,
 			claims: auth.Claims{
 				User: auth.User{
 					ID: uuid.New(),
 				},
 			},
-			wantErr: assert.Error,
 			caseErr: ErrForbidden,
 		},
 		{
-			name:        "error on post delete",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
-			caseErr:     errFoo,
+			name:    "error on post delete",
+			repoErr: errFoo,
+			caseErr: errFoo,
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tt.post, tt.postRepoErr).Once()
-			postRepo.Mock.On("Delete", context.Background(), tPost.ID).Return(nil).Once()
+			repo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tt.post, tt.repoErr)
+			repo.Mock.On("Delete", context.Background(), tPost.ID).Return(nil)
 
 			err := uc.Delete(context.Background(), tt.claims, tPost.ID)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.caseErr)
-			}
+			assert.Equal(t, err, tt.caseErr)
 		})
 	}
 }
@@ -421,82 +369,71 @@ func TestAddVote(t *testing.T) {
 	}
 	tests := []struct {
 		name            string
-		wantErr         assert.ErrorAssertionFunc
+		caseErr         error
 		getPostErr      error
 		addVoteErr      error
-		caseErr         error
 		checkVoteErr    error
 		updateVoteErr   error
 		getPostAfterErr error
 	}{
 		{
 			name:         "vote add",
-			wantErr:      assert.NoError,
 			checkVoteErr: ErrNotFound,
 		},
 		{
 			name:         "vote update",
-			wantErr:      assert.NoError,
 			checkVoteErr: nil,
 		},
 		{
 			name:       "error on get post",
-			wantErr:    assert.Error,
 			getPostErr: errFoo,
 			caseErr:    errFoo,
 		},
 		{
 			name:         "error on check vote",
-			wantErr:      assert.Error,
 			checkVoteErr: errFoo,
 			caseErr:      errFoo,
 		},
 		{
 			name:         "error on add vote",
-			wantErr:      assert.Error,
 			checkVoteErr: ErrNotFound,
 			addVoteErr:   errFoo,
 			caseErr:      errFoo,
 		},
 		{
 			name:          "error on update vote",
-			wantErr:       assert.Error,
 			updateVoteErr: errFoo,
 			caseErr:       errFoo,
 		},
 		{
 			name:            "error on get post after add vote",
-			wantErr:         assert.Error,
 			getPostAfterErr: errFoo,
 			caseErr:         errFoo,
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tPost, tt.getPostErr).Once()
-			postRepo.Mock.On("CheckVote", context.Background(), tPost.ID, tUser.ID).Return(tt.checkVoteErr)
-			postRepo.Mock.On("AddVote", context.Background(), tPost.ID, Vote{Vote: 1, User: tUser.ID}).Return(tt.addVoteErr)
-			postRepo.Mock.On("UpdateVote", context.Background(), tPost.ID, mock.Anything).Return(tt.updateVoteErr)
-			postRepo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tPost, tt.getPostAfterErr)
+			repo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tPost, tt.getPostErr).Once()
+			repo.Mock.On("CheckVote", context.Background(), tPost.ID, tUser.ID).Return(tt.checkVoteErr)
+			repo.Mock.On("AddVote", context.Background(), tPost.ID, Vote{Vote: 1, User: tUser.ID}).Return(tt.addVoteErr)
+			repo.Mock.On("UpdateVote", context.Background(), tPost.ID, mock.Anything).Return(tt.updateVoteErr)
+			repo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tPost, tt.getPostAfterErr)
 
 			_, err := uc.AddVote(context.Background(), claims, tPost.ID, 1)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.caseErr)
-			}
+			assert.Equal(t, err, tt.caseErr)
 		})
 	}
 }
 
 func TestGetVotesByPostID(t *testing.T) {
 	tests := []struct {
-		name        string
-		votes       []Vote
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
+		name  string
+		votes []Vote
+		err   error
 	}{
 		{
 			name: "get by id",
@@ -506,28 +443,23 @@ func TestGetVotesByPostID(t *testing.T) {
 					Vote:   1,
 				},
 			},
-			wantErr: assert.NoError,
 		},
 		{
-			name:        "error on getting posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
-			votes:       []Vote{},
+			name:  "error on getting posts",
+			err:   errFoo,
+			votes: []Vote{},
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetVotesByPostID", context.Background(), tPost.ID).Return(tt.votes, tt.postRepoErr).Once()
+			repo.Mock.On("GetVotesByPostID", context.Background(), tPost.ID).Return(tt.votes, tt.err).Once()
 
 			votes, err := uc.GetVotesByPostID(context.Background(), tPost.ID)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.postRepoErr)
-			}
-
+			assert.Equal(t, err, tt.err)
 			assert.Equal(t, tt.votes, votes)
 		})
 	}
@@ -535,10 +467,9 @@ func TestGetVotesByPostID(t *testing.T) {
 
 func TestGetVotesByPostIDs(t *testing.T) {
 	tests := []struct {
-		name        string
-		votes       []Vote
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
+		name  string
+		votes []Vote
+		err   error
 	}{
 		{
 			name: "get by id",
@@ -548,35 +479,29 @@ func TestGetVotesByPostIDs(t *testing.T) {
 					Vote:   1,
 				},
 			},
-			wantErr: assert.NoError,
 		},
 		{
-			name:        "error on getting posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
-			votes:       []Vote{},
+			name:  "error on getting posts",
+			err:   errFoo,
+			votes: []Vote{},
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetVotesByPostIDs", context.Background(), []uuid.UUID{tPost.ID}).Return(tt.votes, tt.postRepoErr).Once()
+			repo.Mock.On("GetVotesByPostIDs", context.Background(), []uuid.UUID{tPost.ID}).Return(tt.votes, tt.err).Once()
 
 			votes, err := uc.GetVotesByPostIDs(context.Background(), []uuid.UUID{tPost.ID})
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.postRepoErr)
-			}
-
+			assert.Equal(t, err, tt.err)
 			assert.Equal(t, tt.votes, votes)
 		})
 	}
 }
 
 func TestAddComment(t *testing.T) {
-	curTume := time.Now()
 	claims := auth.Claims{
 		User: auth.User{ID: tPost.UserID},
 	}
@@ -587,59 +512,53 @@ func TestAddComment(t *testing.T) {
 	tests := []struct {
 		name               string
 		wantPost           Post
-		wantErr            assert.ErrorAssertionFunc
+		caseErr            error
 		addCommentErr      error
 		getPostErr         error
 		getPostAfterAddErr error
-		caseErr            error
 	}{
 		{
-			name:    "comment add",
-			wantErr: assert.NoError,
+			name:     "comment add",
+			wantPost: tPost,
 		},
 		{
 			name:       "error on get post",
-			wantErr:    assert.Error,
 			getPostErr: errFoo,
 			caseErr:    errFoo,
 		},
 		{
 			name:               "error on get post after add",
-			wantErr:            assert.Error,
 			getPostAfterAddErr: errFoo,
 			caseErr:            errFoo,
 		},
 		{
 			name:          "error on add comment",
-			wantErr:       assert.Error,
 			addCommentErr: errFoo,
 			caseErr:       errFoo,
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tPost, tt.getPostErr).Once()
-			postRepo.Mock.On("AddComment", context.Background(), mock.Anything).Return(tt.addCommentErr)
-			postRepo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tPost, tt.getPostAfterAddErr)
+			repo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tt.wantPost, tt.getPostErr).Once()
+			repo.Mock.On("AddComment", context.Background(), mock.Anything).Return(tt.addCommentErr)
+			repo.Mock.On("GetByID", context.Background(), tPost.ID).Return(tPost, tt.getPostAfterAddErr)
 
-			_, err := uc.AddComment(context.Background(), claims, tPost.ID, newComment, curTume)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.caseErr)
-			}
+			_, err := uc.AddComment(context.Background(), claims, tPost.ID, newComment, curTime)
+			assert.Equal(t, err, tt.caseErr)
 		})
 	}
 }
 
 func TestGetCommentsByPostID(t *testing.T) {
 	tests := []struct {
-		name        string
-		comments    []Comment
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
+		name     string
+		comments []Comment
+		wantErr  assert.ErrorAssertionFunc
+		repoErr  error
 	}{
 		{
 			name: "get by id",
@@ -651,23 +570,23 @@ func TestGetCommentsByPostID(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name:        "error on getting posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
-			comments:    []Comment{},
+			name:     "error on getting posts",
+			wantErr:  assert.Error,
+			repoErr:  errFoo,
+			comments: []Comment{},
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetCommentsByPostID", context.Background(), tPost.ID).Return(tt.comments, tt.postRepoErr).Once()
+			repo.Mock.On("GetCommentsByPostID", context.Background(), tPost.ID).Return(tt.comments, tt.repoErr).Once()
 
 			comments, err := uc.GetCommentsByPostID(context.Background(), tPost.ID)
 			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.postRepoErr)
+				assert.Equal(t, err, tt.repoErr)
 			}
 
 			assert.Equal(t, tt.comments, comments)
@@ -677,10 +596,10 @@ func TestGetCommentsByPostID(t *testing.T) {
 
 func TestGetCommentsByPostIDs(t *testing.T) {
 	tests := []struct {
-		name        string
-		comments    []Comment
-		wantErr     assert.ErrorAssertionFunc
-		postRepoErr error
+		name     string
+		comments []Comment
+		wantErr  assert.ErrorAssertionFunc
+		repoErr  error
 	}{
 		{
 			name: "get by id",
@@ -692,29 +611,30 @@ func TestGetCommentsByPostIDs(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name:        "error on getting posts",
-			wantErr:     assert.Error,
-			postRepoErr: errFoo,
-			comments:    []Comment{},
+			name:     "error on getting posts",
+			wantErr:  assert.Error,
+			repoErr:  errFoo,
+			comments: []Comment{},
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetCommentsByPostIDs", context.Background(), []uuid.UUID{tPost.ID}).Return(tt.comments, tt.postRepoErr).Once()
+			repo.Mock.On("GetCommentsByPostIDs", context.Background(), []uuid.UUID{tPost.ID}).Return(tt.comments, tt.repoErr).Once()
 
 			comments, err := uc.GetCommentsByPostIDs(context.Background(), []uuid.UUID{tPost.ID})
 			if tt.wantErr(t, err) {
-				assert.Equal(t, err, tt.postRepoErr)
+				assert.Equal(t, err, tt.repoErr)
 			}
 
 			assert.Equal(t, tt.comments, comments)
 		})
 	}
 }
+
 func TestDeleteComment(t *testing.T) {
 	type args struct {
 		claims    auth.Claims
@@ -725,7 +645,6 @@ func TestDeleteComment(t *testing.T) {
 		name             string
 		args             args
 		comment          Comment
-		wantErr          assert.ErrorAssertionFunc
 		caseErr          error
 		getCommentErr    error
 		deleteCommentErr error
@@ -733,8 +652,7 @@ func TestDeleteComment(t *testing.T) {
 		getPostAfterErr  error
 	}{
 		{
-			name:    "comment delete",
-			wantErr: assert.NoError,
+			name: "comment delete",
 			args: args{
 				claims: auth.Claims{
 					User: auth.User{
@@ -748,7 +666,6 @@ func TestDeleteComment(t *testing.T) {
 		},
 		{
 			name:          "error on get comment",
-			wantErr:       assert.Error,
 			caseErr:       errFoo,
 			getCommentErr: errFoo,
 		},
@@ -761,10 +678,9 @@ func TestDeleteComment(t *testing.T) {
 					},
 				},
 			},
-			wantErr:          assert.Error,
+			comment:          tComment,
 			caseErr:          errFoo,
 			deleteCommentErr: errFoo,
-			comment:          tComment,
 		},
 		{
 			name: "delete comment of other user",
@@ -775,7 +691,6 @@ func TestDeleteComment(t *testing.T) {
 					},
 				},
 			},
-			wantErr: assert.Error,
 			caseErr: ErrForbidden,
 		},
 		{
@@ -787,10 +702,9 @@ func TestDeleteComment(t *testing.T) {
 					},
 				},
 			},
-			wantErr:    assert.Error,
+			comment:    tComment,
 			caseErr:    errFoo,
 			getPostErr: errFoo,
-			comment:    tComment,
 		},
 		{
 			name: "error on add get post after delete",
@@ -801,27 +715,24 @@ func TestDeleteComment(t *testing.T) {
 					},
 				},
 			},
-			wantErr:         assert.Error,
+			comment:         tComment,
 			caseErr:         errFoo,
 			getPostAfterErr: errFoo,
-			comment:         tComment,
 		},
 	}
 
 	for _, tt := range tests {
-		postRepo := NewRepoMock()
-		uc := NewCore(postRepo)
+		repo := NewRepoMock()
+		uc := NewCore(repo)
 
 		t.Run(tt.name, func(t *testing.T) {
-			postRepo.Mock.On("GetByID", context.Background(), tt.args.postID).Return(tPost, tt.getPostErr).Once()
-			postRepo.Mock.On("GetCommentByID", context.Background(), tt.args.commentID).Return(tt.comment, tt.getCommentErr)
-			postRepo.Mock.On("DeleteComment", context.Background(), tt.args.commentID).Return(tt.deleteCommentErr)
-			postRepo.Mock.On("GetByID", context.Background(), tt.args.postID).Return(tPost, tt.getPostAfterErr)
+			repo.Mock.On("GetByID", context.Background(), tt.args.postID).Return(tPost, tt.getPostErr).Once()
+			repo.Mock.On("GetCommentByID", context.Background(), tt.args.commentID).Return(tt.comment, tt.getCommentErr)
+			repo.Mock.On("DeleteComment", context.Background(), tt.args.commentID).Return(tt.deleteCommentErr)
+			repo.Mock.On("GetByID", context.Background(), tt.args.postID).Return(tPost, tt.getPostAfterErr)
 
 			_, err := uc.DeleteComment(context.Background(), tt.args.claims, tt.args.postID, tt.args.commentID)
-			if tt.wantErr(t, err) {
-				assert.Equal(t, tt.caseErr, err)
-			}
+			assert.Equal(t, tt.caseErr, err)
 		})
 	}
 }

@@ -12,96 +12,90 @@ import (
 )
 
 func TestToCorePost(t *testing.T) {
-	id := uuid.New()
-	date := time.Now()
-	dbP := dbPost{
-		ID:          id,
+	dbPost := dbPost{
+		ID:          uuid.UUID{},
 		Type:        "text",
 		Title:       "title",
 		Category:    "category",
 		Body:        "body",
 		Score:       sql.NullInt32{Int32: 1, Valid: true},
 		Views:       1,
-		DateCreated: date,
-		UserID:      id,
+		DateCreated: time.Time{},
+		UserID:      uuid.UUID{},
 	}
 	corePost := post.Post{
-		ID:          id,
+		ID:          uuid.UUID{},
 		Type:        "text",
 		Title:       "title",
 		Body:        "body",
 		Category:    "category",
 		Score:       1,
 		Views:       1,
-		DateCreated: date,
-		UserID:      id,
+		DateCreated: time.Time{},
+		UserID:      uuid.UUID{},
 	}
 
-	assert.Equal(t, corePost, toCorePost(dbP))
+	assert.Equal(t, corePost, toCorePost(dbPost))
 }
 
 func TestToDBPost(t *testing.T) {
-	id := uuid.New()
-	date := time.Now()
 	corePost := post.Post{
-		ID:          id,
+		ID:          uuid.UUID{},
 		Type:        "text",
 		Title:       "title",
 		Body:        "body",
 		Category:    "category",
 		Views:       1,
-		DateCreated: date,
-		UserID:      id,
+		DateCreated: time.Time{},
+		UserID:      uuid.UUID{},
 	}
 	dbP := dbPost{
-		ID:          id,
+		ID:          uuid.UUID{},
 		Type:        "text",
 		Title:       "title",
 		Category:    "category",
 		Body:        "body",
 		Views:       1,
-		DateCreated: date,
-		UserID:      id,
+		DateCreated: time.Time{},
+		UserID:      uuid.UUID{},
 	}
 	assert.Equal(t, dbP, toDBPost(corePost))
 }
 
 func TestToCorePosts(t *testing.T) {
-	id := uuid.New()
-	date := time.Now()
 	corePosts := []post.Post{{
-		ID:          id,
+		ID:          uuid.UUID{},
 		Type:        "text",
 		Title:       "title",
 		Body:        "body",
 		Category:    "category",
 		Views:       1,
-		DateCreated: date,
-		UserID:      id,
+		DateCreated: time.Time{},
+		UserID:      uuid.UUID{},
 	}}
 	dbPosts := []dbPost{{
-		ID:          id,
+		ID:          uuid.UUID{},
 		Type:        "text",
 		Title:       "title",
 		Category:    "category",
 		Body:        "body",
 		Views:       1,
-		DateCreated: date,
-		UserID:      id,
+		DateCreated: time.Time{},
+		UserID:      uuid.UUID{},
 	}}
 	assert.Equal(t, corePosts, toCorePosts(dbPosts))
 }
 
 func TestToCoreComment(t *testing.T) {
 	dbComm := dbComment{
-		ID:          [16]byte{},
-		PostID:      [16]byte{},
+		ID:          uuid.UUID{},
+		PostID:      uuid.UUID{},
 		Body:        "",
 		DateCreated: time.Time{},
 	}
 	comm := post.Comment{
-		ID:          [16]byte{},
-		PostID:      [16]byte{},
+		ID:          uuid.UUID{},
+		PostID:      uuid.UUID{},
 		DateCreated: time.Time{},
 		Body:        "",
 	}
@@ -111,15 +105,14 @@ func TestToCoreComment(t *testing.T) {
 
 func TestToDBComment(t *testing.T) {
 	dbComm := dbComment{
-		ID:     [16]byte{},
-		PostID: [16]byte{},
-		// Author:      [16]byte{},
+		ID:     uuid.UUID{},
+		PostID: uuid.UUID{},
 		Body:        "",
 		DateCreated: time.Time{},
 	}
 	comm := post.Comment{
-		ID:          [16]byte{},
-		PostID:      [16]byte{},
+		ID:          uuid.UUID{},
+		PostID:      uuid.UUID{},
 		DateCreated: time.Time{},
 		Body:        "",
 	}
@@ -129,14 +122,14 @@ func TestToDBComment(t *testing.T) {
 
 func TestToCoreComments(t *testing.T) {
 	dbComms := []dbComment{{
-		ID:          [16]byte{},
-		PostID:      [16]byte{},
+		ID:          uuid.UUID{},
+		PostID:      uuid.UUID{},
 		Body:        "",
 		DateCreated: time.Time{},
 	}}
 	comms := []post.Comment{{
-		ID:          [16]byte{},
-		PostID:      [16]byte{},
+		ID:          uuid.UUID{},
+		PostID:      uuid.UUID{},
 		DateCreated: time.Time{},
 		Body:        "",
 	}}
@@ -146,13 +139,13 @@ func TestToCoreComments(t *testing.T) {
 
 func TestToCoreVote(t *testing.T) {
 	dbVote := dbVote{
-		PostID: [16]byte{},
-		UserID: [16]byte{},
+		PostID: uuid.UUID{},
+		UserID: uuid.UUID{},
 		Vote:   0,
 	}
 	vote := post.Vote{
 		Vote: 0,
-		User: [16]byte{},
+		User: uuid.UUID{},
 	}
 
 	assert.Equal(t, vote, toCoreVote(dbVote))
@@ -160,13 +153,13 @@ func TestToCoreVote(t *testing.T) {
 
 func TestToCoreVotes(t *testing.T) {
 	dbVotes := []dbVote{{
-		PostID: [16]byte{},
-		UserID: [16]byte{},
+		PostID: uuid.UUID{},
+		UserID: uuid.UUID{},
 		Vote:   0,
 	}}
 	votes := []post.Vote{{
 		Vote: 0,
-		User: [16]byte{},
+		User: uuid.UUID{},
 	}}
 
 	assert.Equal(t, votes, toCoreVotes(dbVotes))
@@ -176,12 +169,13 @@ func TestToDBVote(t *testing.T) {
 	id := uuid.New()
 	vote := post.Vote{
 		Vote: 0,
-		User: [16]byte{},
+		User: uuid.UUID{},
 	}
 	dbVote := dbVote{
 		PostID: id,
-		UserID: [16]byte{},
+		UserID: uuid.UUID{},
 		Vote:   0,
 	}
+
 	assert.Equal(t, dbVote, toDBVote(id, vote))
 }
