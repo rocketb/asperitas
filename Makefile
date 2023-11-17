@@ -73,17 +73,17 @@ clean: ## clean the generated files
 ########
 
 # support go modules
-check-mod:
+check-mod: ## check that go.mod and go.sum are in sync with vendor
 	@git diff --exit-code -- go.sum go.mod vendor/ || \
 	    (echo "Run 'go mod download && go mod verify && go mod tidy && go mod vendor' and check in changes to vendor/ to fix failed check-mod."; exit 1)
 
-format:
+format: ## format the code
 	find . -type f -name '*.go' -exec gofmt -w -s {} \;
 	find . -type f -name '*.go' -exec goimports -w -local github.com/rocketb/asperitas {} \;
 
-tidy:
+tidy: ## tidy up the go modules
 	go mod tidy
 	go mod vendor
 
-deps-cleancache:
+deps-cleancache: ## clean the go modules cache
 	go clean -modcache
